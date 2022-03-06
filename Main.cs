@@ -26,11 +26,12 @@ namespace Task4
         }
 
 
+        
  
         public List<Wall> CreateWalls(Document doc,double _width,double _depth,string baseLevelName = "Уровень 1",string heightLevelName = "Уровень 2") {
             var levels = GetLevels(doc);
-            ElementId baseLevelId = GetLevelId(levels, baseLevelName);
-            ElementId heightLevelId = GetLevelId(levels, heightLevelName);
+            Element baseLevel = GetLevel(levels, baseLevelName);
+            Element heightLevel = GetLevel(levels, heightLevelName);
 
             double width = UnitUtils.ConvertToInternalUnits(_width, UnitTypeId.Millimeters);
             double depth = UnitUtils.ConvertToInternalUnits(_depth, UnitTypeId.Millimeters);
@@ -50,9 +51,9 @@ namespace Task4
                 for (int i = 0; i < 4; i++)
                 {
                     Line geomLine = Line.CreateBound(points[i], points[i + 1]);
-                    Wall wall = Wall.Create(doc, geomLine, baseLevelId, false);
+                    Wall wall = Wall.Create(doc, geomLine, baseLevel.Id, false);
                     walls.Add(wall);
-                    wall.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE)?.Set(heightLevelId);
+                    wall.get_Parameter(BuiltInParameter.WALL_HEIGHT_TYPE)?.Set(heightLevel.Id);
                 }
                 ts.Commit();
             }
@@ -60,8 +61,8 @@ namespace Task4
         }
 
 
-        public ElementId GetLevelId(List<Level> levels,string levelName) {
-          return  levels.Where(x => x.Name.Equals(levelName)).OfType<Level>().FirstOrDefault().Id;
+        public Element GetLevel(List<Level> levels,string levelName) {
+          return  levels.Where(x => x.Name.Equals(levelName)).OfType<Level>().FirstOrDefault();
         }
         public List<Level> GetLevels(Document doc)
         {
