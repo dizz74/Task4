@@ -43,7 +43,7 @@ namespace Task4
             points.Add(new XYZ(-dx, dy, 0));
             points.Add(new XYZ(-dx, -dy, 0));
             List<Wall> walls;
-            using (var ts = new Transaction(doc, "new wall"))
+            using (var ts = new Transaction(doc, "new walls"))
             {
                 ts.Start();
                 walls = new List<Wall>();
