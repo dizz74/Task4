@@ -30,8 +30,8 @@ namespace Task4
  
         public List<Wall> CreateWalls(Document doc,double _width,double _depth,string baseLevelName = "Уровень 1",string heightLevelName = "Уровень 2") {
             var levels = GetLevels(doc);
-            Element baseLevel = GetLevel(levels, baseLevelName);
-            Element heightLevel = GetLevel(levels, heightLevelName);
+            Level baseLevel = GetLevel(levels, baseLevelName);
+            Level heightLevel = GetLevel(levels, heightLevelName);
 
             double width = UnitUtils.ConvertToInternalUnits(_width, UnitTypeId.Millimeters);
             double depth = UnitUtils.ConvertToInternalUnits(_depth, UnitTypeId.Millimeters);
@@ -61,7 +61,7 @@ namespace Task4
         }
 
 
-        public Element GetLevel(List<Level> levels,string levelName) {
+        public Level GetLevel(List<Level> levels,string levelName) {
           return  levels.Where(x => x.Name.Equals(levelName)).OfType<Level>().FirstOrDefault();
         }
         public List<Level> GetLevels(Document doc)
