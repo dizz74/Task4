@@ -21,7 +21,6 @@ namespace Task4
 
             CreateWalls(doc, 10000, 5000);
 
-
             return Result.Succeeded;
         }
 
