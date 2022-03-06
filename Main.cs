@@ -1,5 +1,6 @@
 ﻿using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Structure;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using System;
@@ -18,19 +19,86 @@ namespace Task4
             UIApplication uiApp = commandData.Application;
             UIDocument uiDocument = uiApp.ActiveUIDocument;
             Document doc = uiDocument.Document;
+            var levels = GetLevels(doc);
+            Level level1 = GetLevelByName(levels, "Уровень 1");
+            Level level2 = GetLevelByName(levels, "Уровень 2");
 
-            CreateWalls(doc, 10000, 5000);
-
+            List<Wall> walls = CreateWalls(doc, 10000, 5000,level1,level2);
+            AddDoor(doc, level1, walls[0]);
+            AddWindow(doc, level1, walls[1],1200);
+            AddWindow(doc, level1, walls[2],1200);
+            AddWindow(doc, level1, walls[3],1200);
             return Result.Succeeded;
         }
 
 
-        
- 
-        public List<Wall> CreateWalls(Document doc,double _width,double _depth,string baseLevelName = "Уровень 1",string heightLevelName = "Уровень 2") {
+        public FamilyInstance AddWindow(Document doc, Level level, Wall host, double _height,string Name = "0406 x 0610 мм", string FamilyName = "Фиксированные")
+        {
+            double height = UnitUtils.ConvertToInternalUnits(_height, UnitTypeId.Millimeters);
+            FamilyInstance door;
+            FamilySymbol fSymbol = new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol))
+                .OfCategory(BuiltInCategory.OST_Windows)
+                .OfType<FamilySymbol>()
+                .Where(x => x.Name.Equals(Name))
+                .Where(x => x.FamilyName.Equals(FamilyName))
+                .FirstOrDefault();
+            var curve = host.Location as LocationCurve;
+            XYZ p1 = curve.Curve.GetEndPoint(0);
+            XYZ p2 = curve.Curve.GetEndPoint(1);
+            XYZ p = (p1 + p2) / 2;
+
+            using (var ts = new Transaction(doc, "create window"))
+            {
+                ts.Start();
+                if (!fSymbol.IsActive)
+                {
+                    fSymbol.Activate();
+                    doc.Regenerate();
+                }
+
+                
+                door = doc.Create.NewFamilyInstance(p, fSymbol, host, level, StructuralType.NonStructural);
+                door.get_Parameter(BuiltInParameter.INSTANCE_SILL_HEIGHT_PARAM)?.Set(height);
+                ts.Commit();
+            }
+            return door;
+        }
+
+        public FamilyInstance AddDoor(Document doc, Level level, Wall host,string Name = "0915 x 2134 мм",string FamilyName = "Одиночные-Щитовые")
+        {
+            FamilyInstance door;
+            FamilySymbol fSymbol = new FilteredElementCollector(doc).OfClass(typeof(FamilySymbol))
+                .OfCategory(BuiltInCategory.OST_Doors)
+                .OfType<FamilySymbol>()
+                .Where(x => x.Name.Equals(Name))
+                .Where(x => x.FamilyName.Equals(FamilyName))
+                .FirstOrDefault();
+            var curve = host.Location as LocationCurve;
+            XYZ p1 = curve.Curve.GetEndPoint(0);
+            XYZ p2 = curve.Curve.GetEndPoint(1);
+            XYZ p = (p1 + p2) / 2;
+
+            using (var ts = new Transaction(doc, "create door"))
+            {
+                ts.Start();
+                if (!fSymbol.IsActive)
+                {
+                    fSymbol.Activate();
+                    doc.Regenerate();
+                } 
+
+                door = doc.Create.NewFamilyInstance(p, fSymbol, host, level, StructuralType.NonStructural);
+                ts.Commit();
+            }
+            return door;
+        }
+
+
+
+        public List<Wall> CreateWalls(Document doc, double _width, double _depth, Level baseLevel, Level heightLevel)
+        {
             var levels = GetLevels(doc);
-            Level baseLevel = GetLevel(levels, baseLevelName);
-            Level heightLevel = GetLevel(levels, heightLevelName);
+          
 
             double width = UnitUtils.ConvertToInternalUnits(_width, UnitTypeId.Millimeters);
             double depth = UnitUtils.ConvertToInternalUnits(_depth, UnitTypeId.Millimeters);
@@ -60,8 +128,9 @@ namespace Task4
         }
 
 
-        public Level GetLevel(List<Level> levels,string levelName) {
-          return  levels.Where(x => x.Name.Equals(levelName)).OfType<Level>().FirstOrDefault();
+        public Level GetLevelByName(List<Level> levels, string levelName)
+        {
+            return levels.Where(x => x.Name.Equals(levelName)).OfType<Level>().FirstOrDefault();
         }
         public List<Level> GetLevels(Document doc)
         {
